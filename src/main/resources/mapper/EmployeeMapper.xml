@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="club.musician.dao.EmployeeDao">
+    <select id="selectEmployee" resultType="employee" databaseId="mysql">
+        select *
+        from tbl_employee
+        where id = #{id}
+    </select>
+
+    <insert id="saveEmployee" parameterType="club.musician.entity.Employee">
+        insert into tbl_employee(last_name,email,gender)
+        values(#{lastName},#{email},#{gender})
+    </insert>
+
+    <insert id="saveEmployee" parameterType="employee" databaseId="oracle">
+        <!-- keyProperty:查出的主键值封装给javabean的那个属性 -->
+        <!-- 这个查询语句要在inset语句之前执行，所以还要设置order="Before" -->
+        <selectKey keyProperty="id" order="BEFORE" resultType="Integer">
+            select seq_employee.nextval from dual
+        </selectKey>
+        <!-- 插入自增id的员工信息 -->
+        insert into employee(id,last_name,email,gender) values(#{id},#{lastName},#{email},#{gender})
+    </insert>
+
+
+    <update id="updateEmployee" parameterType="club.musician.entity.Employee">
+        update tbl_employee
+            set last_name = #{lastName},email=#{email},gender=#{gender}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteEmployee">
+        delete from tbl_employee where id=#{id}
+    </delete>
+
+
+</mapper>

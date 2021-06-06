@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+    <!--
+    properties
+        1、mybatis可以使用properties来引入外部properties的内容
+            resource:引入类路径下的资源
+            url:引入网络路径或者磁盘路径下的资源
+        2、那引入了这个properties之后，我们就可以在下面配置数据源的时候，
+        进行外部配置文件的使用了
+     -->
+    <properties resource="jdbc.properties"></properties>
+
+    <!--
+    settings
+        来看看这个settings的配置吧
+        其中有一个特别管用的配置就叫做 mapUnderscoreToCamelCase，那么这个配置有什么用呢？
+        就想我们之前的Employee中有个字段叫lastName,而数据库中的字段是last_name，那么开启了这个配置
+        以后，咱么就不需要再修改sql语句[last_name as lastName]了
+    -->
+    <settings>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+        <!--
+            Mybatis处理NULL值的时候会映射为JDBC OTHER 类型，这个时候 Oracle 会不认识
+            示例：
+                insert into table(f1,f2,f3...) values(f1v,f2v,f3v...)
+                这个时候如果其中一个，假设是f2v为null，那么mybatis会将其值设置为JdbcType为OTHER，插入Oracle
+                数据库的时候就报错了
+             那么加入这个配置的话，Mybatis再在对NULL值的处理的时候，就不是OTHER了而是NULL了，那么Oracle就能正确的
+             识别了，不过后续我们会在mapper.xml中判断值是否为null的
+         -->
+        <setting name="jdbcTypeForNull" value="NULL"></setting>
+    </settings>
+
+    <!--
+        typeAliases
+            我们的mapper.xml写查询语句的时候啊，resultType中经常使用到我们自己写的Java 实体类啊
+            我们总是需要写那个全限定名，很费程序猿的，那设置了这个typeAliases的话就省事多了，他会给
+            我们写的java entity实体类创建别名，我们只要写那个别名就行了
+    -->
+    <typeAliases>
+        <!-- 1. 但是这样写我们还是要写全限定名啊，这个工作量不还是没少嘛？！ -->
+<!--        <typeAlias type="club.musician.entity.Employee" alias="employee"/>-->
+
+        <!-- 2. 简化的写法，为某个包下的所有类，批量的起个别名
+            name:指定包名(为当前包及其子包进行批量的起别名)
+
+            注意：别名不区分大小写
+
+            3. 还有一种写法，在对应的实体类上面写@Alias("employee")进行别名的指定
+         -->
+        <package name="club.musician.entity"/>
+
+        <!--
+            还有一些是Mybatis已经帮我们起好了的别名，像是java的基本类型及其包装类，还有较为负载的Date类型等
+            我们起的名字，不要和他们一样
+
+            后面开发建议使用 【全限定名】 的方式
+        -->
+    </typeAliases>
+
+    <!--
+        类型处理器的作用，架起Java对象的类型与数据库类型对应映射的桥梁
+            StringTypeHandler
+            DoubleTypeHandler等等
+
+        提一嘴JSR-310
+        jdk1.8之前，对时间处理起来并不是很好用，计算及判断，JSR-310相关的typeHandlers需要我们手动注册
+        jdk1.8之后，添加了JSR-310，方便了对时间的相关处理，mybatis-3.4之后，JSR-310相关typeHandler都是自动注册的
+     -->
+    <typeHandlers></typeHandlers>
+
+
+    <!--
+        Mybatis可以拦截到咱们的SQL的执行步骤
+        主要是拦截四大对象：
+            Executor(update/query/commit...)
+            ParameterHandler(setParameters...)
+            ResultSetHandler(handleResultSets...)
+            StatementHandler(prepare/parameterize/batch...)
+        暂时先混个眼熟 ==== 2021年06月05日16:04:06
+     -->
+<!--    <plugins>-->
+<!--        <plugin interceptor=""></plugin>-->
+<!--    </plugins>-->
+
+
+    <!--
+        mybatis可以配置多种环境
+           这个id就代表着，当前数据源的全局唯一标识，我们可以进行测试环境与生产环境的切换
+           default = "test"
+
+           transactionManager：事务管理器
+                type: 事务类型[JDBC-JdbcTransactionFactory|MANAGED-ManagedTransactionFactory]
+                最终的解决方案，是用我们的Spring，^_^
+                自定义事务管理器，实现TransactionFactory接口
+
+           dataSource：数据源
+                type: [UNPOOLED-不适用连接池|POOLED-使用连接池|JNDI-Java Naming and Directory Interface]
+                分别对应[UnplloedDataSourceFactory|PooleDataSourceFactory|JndiDataSourceFactory]
+                自定义数据源，实现DataSourceFactory接口
+     -->
+
+    <environments default="development">
+        <environment id="development">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="${jdbc.driverClass}"/>
+                <property name="url" value="${jdbc.url}"/>
+                <property name="username" value="${jdbc.username}"/>
+                <property name="password" value="${jdbc.password}"/>
+            </dataSource>
+        </environment>
+
+<!--        <environment id="test">-->
+<!--            <transactionManager type="JDBC"/>-->
+<!--            <dataSource type="POOLED">-->
+<!--                <property name="driver" value="${jdbc.driverClass}"/>-->
+<!--                <property name="url" value="${jdbc.url}"/>-->
+<!--                <property name="username" value="${jdbc.username}"/>-->
+<!--                <property name="password" value="${jdbc.password}"/>-->
+<!--            </dataSource>-->
+<!--        </environment>-->
+    </environments>
+
+    <!--
+    databaseIdProvider:
+        1.mybatis怎么支持多数据库厂商呢？
+        只需要在我们的全局配置文件中指定，我们当前使用的数据库标识进行
+            type:DB_VENDOR
+            作用就是根据得到的数据库厂商的标识，mybatis就能根据这个标识，来执行不同的sql
+            
+            我们可以在databaseIdProvider中，为不同的数据库厂商起别名，起好别名怎么用呢？
+            只需要到咱么的这个Mapper.xml中，在增删改标签上添加databaseId="mysql|oracle"就行了
+
+            如果Mapper.xml中指定了databaseId的话，那么在指定数据源的时候：
+            1.会加载对应数据库标识的sql语句
+            2.会忽略id相同但未指定databaseId的sql
+    -->
+    <databaseIdProvider type="DB_VENDOR">
+        <property name="MySQL" value="mysql"/>
+        <property name="Oracle" value="oracle"/>
+        <property name="Sql Server" value="sqlServer"/>
+    </databaseIdProvider>
+
+
+    <!--
+        将我们写好的sql映射文件，注册到全局配置文件中
+            resource:引用类路径下的sql映射文件
+            url:引用磁盘路径下的资源 file:///var/mappers/XxxMapper.xml
+
+        还有一个属性class:类名，直接引用这个接口
+     -->
+    <mappers>
+        <mapper resource="mapper/EmployeeMapper.xml"/>
+
+        <!--
+            如果要像下面这样的写法，那怎么才能让mybatis知道对应的mapper.xml文件呢？
+            答：1.对应的就应该将这个mapper.xml放入这个class对应的包中了
+                2.接口名必须和文件名相同
+
+            还有一种就是根本就不需要这个mapperx.ml文件了，我们基于注解的方式进行sql的语句的书写
+
+            推荐：比较重要的DAO接口我们来写SQL映射文件
+                不重要的，简单的DAO我们为了开发快速可以使用注解
+         -->
+<!--        <mapper class="club.musician.dao.EmployeeMapper"/>-->
+
+
+        <!--
+            基于包的批量注册，那这样还是需要将Mapper.xml放入该包下，并且名字要相同的
+         -->
+<!--        <package name="club.musician.dao"/>-->
+
+    </mappers>
+
+
+</configuration>
