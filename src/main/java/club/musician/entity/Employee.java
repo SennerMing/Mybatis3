@@ -2,12 +2,15 @@ package club.musician.entity;
 
 import org.apache.ibatis.type.Alias;
 
+import java.io.Serializable;
+
 //@Alias("employee")
-public class Employee {
+public class Employee implements Serializable {
     private Integer id;
     private String lastName;
     private String email;
     private String gender;
+    private Department department;
 
     public Employee() {
     }
@@ -57,13 +60,13 @@ public class Employee {
         this.gender = gender;
     }
 
-    @Override
-    public String toString() {
-        return "Employee{" +
-                "id=" + id +
-                ", lastName='" + lastName + '\'' +
-                ", email='" + email + '\'' +
-                ", gender='" + gender + '\'' +
-                '}';
+    public Department getDepartment() {
+        return department;
     }
+
+    public void setDepartment(Department department) {
+        this.department = department;
+    }
+
+
 }
