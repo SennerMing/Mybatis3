@@ -120,7 +120,7 @@
                 lastName = #{lastName},
             </if>
             <if test="email != null and email.trim() != ''">
-                email like #{email}
+                email = #{email}
             </if>
             <if test="gender != null and gender!=''">
                 gender = #{gender}
